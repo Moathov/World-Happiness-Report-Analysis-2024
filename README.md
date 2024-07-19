@@ -7,7 +7,7 @@ The World Happiness Report 2024 aims to measure and rank countries based on vari
 My goal is to uncover patterns, trends, and key factors that influence happiness around the globe for the years 2005-2024 using R Markdown and Tableau.
 
 ## Contents
-- `World_happiness_report_analysis_2024.ipynb`: The Jupyter notebook containing the analysis.
+- `World Happiness Report from 2005-2024 By R Markdown.Rmd`: The R Markdown file containing the analysis.
 - `README.md`: This file.
 
 ## Visualizations
