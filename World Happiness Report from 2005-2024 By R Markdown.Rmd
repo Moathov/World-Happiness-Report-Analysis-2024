@@ -1,0 +1,449 @@
+  ---
+  title: "World Happiness Report from 2005-2024 By R Markdown"
+  author: "Moath"
+  date: "2024-07-02"
+  output: html_document
+  ---
+  // ignore_for_file: prefer_const_constructors, prefer_interpolation_to_compose_strings, avoid_print
+
+  ```{r setup, include=FALSE}
+  knitr::opts_chunk$set(echo = TRUE)
+  ```
+
+  # installing and loading the required packages  
+  ```{r, Loading the Dataset}
+  install.packages("tidyverse")
+  install.packages("ggplot2")
+  install.packages("dplyr")
+  install.packages("lsa")
+
+  library(tidyverse)
+  library(ggplot2)   
+  library(dplyr)      
+  library(skimr)     
+  library(kableExtra)
+  library(lsa)
+  library(corrplot)
+
+
+  ```
+
+
+
+  # Read the Dataset  
+
+  ```{r, Reading the Dataset}
+  library(readr)
+
+  World_happiness_data_2024 <- read.csv("C:/Users/m.alshannaq/Downloads/archive (7)/World-happiness-report-2024.csv") # nolint
+  World_happiness_data <- read.csv("C:/Users/m.alshannaq/Downloads/archive (7)/World-happiness-report-updated_2024.csv") # nolint
+
+
+  str(World_happiness_data_2024)
+
+  #.......................
+
+  str(World_happiness_data)
+
+  ```
+
+
+  # let's take a brief look of the "World_happiness_data"
+
+  ```{r, brief of the dataset}
+
+  head(World_happiness_data)
+  summary(World_happiness_data)
+
+  ```
+  # let's take a brief look of the "World_happiness_data_2024"
+
+  ```{r, brief of the dataset}
+
+  head(World_happiness_data_2024)
+  summary(World_happiness_data_2024)
+
+  ```
+
+
+  # Here is a full view of the dataset after sorting it by the "Life.Ladder" in an Ascending order.
+
+  ```{r, full view of the dataset}
+
+  arranged_data <- World_happiness_data %>%  arrange(Life.Ladder)
+
+    head(arranged_data)
+
+  ```
+
+
+
+  ## After further investigtion, I have found some NULL values in the datasete.I will summarize the columns that contains atleast one row with a NULL value:  
+
+  ```{r}
+
+  null_count <- World_happiness_data %>% summarise_all(~sum(is.na(.)))
+
+  null_columns_names <- null_count %>% select_if(~.>0)
+
+  print(null_columns_names)
+
+  ```
+
+
+  # The same for World_happiness_data_2024
+  ```{r}
+
+  null_count_2024 <- World_happiness_data_2024 %>% summarise_all(~sum(is.na(.)))
+
+  null_columns_names_2024 <- null_count_2024 %>% select_if(~.>0)
+
+  print(null_columns_names_2024)
+
+  ```
+
+
+
+  # I have chosen to replace the NULL values with the "Mean/Average Imputation" because This can be suitable for numerical variables like (GDP per capita, life expectancy, or other continuous measures). It's straightforward and preserves the overall distribution of the data.
+
+  # More Precisely: I will calculate the Mean/Average for the values of each column for each Country Group alone across the years, then replace the NULL values with it. 
+
+  # For Example: "Afghanistan" had two NULL values in the "Log.GDP.per.capita" column, I have Replaced these null values with the "Mean/Average" of values in the "Log.GDP.per.capita" for "Afghanistan" country Only across the years.
+
+  ```{r}
+  library(dplyr)
+
+  mean_excluding_na_nan <- function(x) {
+    valid_values <- x[!is.na(x) & !is.nan(x)]
+    mean(valid_values)
+  }
+
+  # Read the data
+  World_happiness_data <- read.csv("C:/Users/m.alshannaq/Downloads/archive (7)/World-happiness-report-updated_2024.csv")
+
+  # Group by Country.name and fill NA and NaN values with the mean of each country
+  world_happiness_clean <- World_happiness_data %>%
+    group_by(Country.name) %>%
+    mutate(across(where(is.numeric), 
+                  ~ifelse(is.na(.) | is.nan(.), mean_excluding_na_nan(.), .)))
+
+  # Repeat the process without grouping for the countries that has all values in it as NA
+
+  world_happiness_clean_final <- world_happiness_clean %>%
+    ungroup() %>%
+    mutate(across(where(is.numeric), 
+                  ~ifelse(is.na(.) | is.nan(.), mean_excluding_na_nan(.), .)))
+
+  # My Analysis without will be without the country of "Israel"
+
+  world_happiness_clean_final <- world_happiness_clean_final %>%
+    filter(Country.name != "Israel")
+
+  # Write the cleaned data to a CSV file
+  write.csv(world_happiness_clean_final, "world_happiness_clean_main.csv")
+
+
+
+  ```
+
+
+
+
+  # I am gonna repeat the process but for the World_happiness_data_2024 without the grouping
+  ```{r}
+  library(dplyr)
+  library(lsa)
+
+
+  mean_excluding_na_nan <- function(x) {
+    valid_values <- x[!is.na(x) & !is.nan(x)]
+    
+    mean(valid_values)
+  }
+
+
+  world_happiness_clean_2024 <- World_happiness_data_2024 %>%
+    mutate(across(where(is.numeric),
+    .fns = ~ifelse(is.na(.) | is.nan(.) | . ==0, mean_excluding_na_nan(.), .)))
+
+    world_happiness_clean_2024 <- world_happiness_clean_2024 %>%
+    filter(Country.name != "Israel")
+
+  head(world_happiness_clean_2024)
+
+  write.csv(world_happiness_clean_2024, "world_happiness_clean_2024.csv")
+  ```
+
+
+
+  # Let's draw the number of regions per country
+  ```{r}
+  install.packages("plotly")
+  library(ggplot2)
+  library(plotly)
+
+  world_happiness_clean_2024 <- read.csv("C:/Users/m.alshannaq/Downloads/archive (7)/world_happiness_clean_2024.csv") # nolint
+  head(world_happiness_clean_2024)
+
+  p <- ggplot(world_happiness_clean_2024, aes(x = Regional.indicator, fill = Regional.indicator)) + # nolint
+    geom_bar() +
+    labs(title = "Number of Countries per Region",
+        x = "Region",
+        y = "Number of Countries") +
+    theme_minimal() +
+    theme(legend.title = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1)) # nolint
+
+  interactive_plot <- ggplotly(p)
+
+  interactive_plot
+
+  ```
+
+  # Let's see the happiness score across the different regions
+
+  ```{r}
+  library(RColorBrewer)
+
+
+  colors <- brewer.pal(n = length(unique(world_happiness_clean_2024$Regional.indicator)), name = "Set3") # nolint
+
+  ggplot(world_happiness_clean_2024, aes(x = Regional.indicator, y = Ladder.score, fill = Regional.indicator)) + # nolint
+    geom_bar(stat = "identity") +
+    labs(title = "Happiness (Ladder score) Across Regions",
+        x = "Region",
+        y = "Happiness (Ladder score)") +
+    scale_fill_manual(values = colors) +  
+    theme_minimal(base_size = 14) +  
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12),  #nolint
+          axis.text.y = element_text(size = 12), 
+          axis.title = element_text(size = 14),  
+          legend.position = "none")
+
+
+
+  ```
+
+  # Now let's see the correlation between all the factors by Drawing a Correlation Matrix (Heatmap)
+  ```{r}
+
+
+  install.packages("corrplot")
+  install.packages("ggplot2")
+  install.packages("dplyr")
+  library(corrplot)
+  library(ggplot2)
+  library(dplyr)
+
+  world_happiness_clean_main <- read.csv("world_happiness_clean_main.csv")
+  numeric_columns <- select_if(world_happiness_clean_main, is.numeric) %>% select(-year) # nolint
+
+
+  correlation_matrix <- cor(numeric_columns, use = "complete.obs")
+
+  upper_triangle_mask <- matrix(NA, nrow = nrow(correlation_matrix), ncol = ncol(correlation_matrix))# nolint
+  upper_triangle_mask[upper.tri(upper_triangle_mask)] <- TRUE
+
+  corrplot(correlation_matrix, method = "color", 
+          col = colorRampPalette(c("blue", "white", "Brown"))(200),
+          type = "lower", 
+          tl.col = "black", 
+          tl.srt = 45, 
+          addCoef.col = "black", 
+          number.cex = 0.7, 
+          diag = FALSE)
+
+  ```
+
+
+
+
+  # Now let's see what are the most correlated factors with the Life Ladder Score
+  ```{r}
+  install.packages("corrplot")
+  install.packages("ggplot2")
+  install.packages("dplyr")
+  library(corrplot)
+  library(ggplot2)
+  library(dplyr)
+
+  world_happiness_clean_main <- read.csv("world_happiness_clean_main.csv")
+
+  numeric_columns <- select_if(world_happiness_clean_main, is.numeric) %>% select(-year) # nolint
+
+  # Calculate correlations with Life Ladder
+  correlations <- cor(numeric_columns, use = "complete.obs")
+  cor_life_ladder <- correlations["Life.Ladder", -1]  # nolint
+
+  # Prepare data for visualization
+  cor_df <- data.frame(
+    factor = names(cor_life_ladder),
+    correlation = as.numeric(cor_life_ladder)
+  )
+
+  # Create bar plot to visualize the correlations
+  p <- ggplot(cor_df, aes(x = reorder(factor, correlation), y = correlation, fill = correlation)) +
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    labs(title = "Factors Influencing Life Ladder Score",
+        x = "Factors",
+        y = "Correlation with Life Ladder") +
+    scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
+    theme_minimal(base_size = 8) +
+    theme(axis.text.x = element_text(size = 12), 
+          axis.text.y = element_text(size = 12), 
+          axis.title = element_text(size = 14))
+
+  ggplotly(p)
+  ```
+
+
+  # Let's Draw the Top 3 Happiest and Unhappiest Countries (Total Life Ladder Score) from 2005-2023.
+  ```{r}
+
+
+  world_happiness_clean_main <- read.csv("world_happiness_clean_main.csv")
+
+  total_life_ladder <- world_happiness_clean_main %>%
+    group_by(Country.name) %>%
+    summarise(Total_Life_Ladder = sum(Life.Ladder, na.rm = TRUE))
+
+  top_3_happiest <- total_life_ladder %>%
+    arrange(desc(Total_Life_Ladder)) %>%
+    head(3) %>%
+    mutate(Category = "Happiest")
+
+  top_3_unhappiest <- total_life_ladder %>%
+    arrange(Total_Life_Ladder) %>%
+    head(3) %>%
+    mutate(Category = "Unhappiest")
+
+  top_countries <- bind_rows(top_3_happiest, top_3_unhappiest)
+
+  p <- ggplot(top_countries, aes(x = reorder(Country.name, Total_Life_Ladder), y = Total_Life_Ladder, fill = Category)) + #nolint
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    labs(title = "Top 3 Happiest and Unhappiest Countries (Total Life Ladder Score)", #nolint
+        x = "Country",
+        y = "Total Life Ladder Score") +
+    scale_fill_manual(values = c("Happiest" = "#208a1a", "Unhappiest" = "#d6b119cd")) +
+    theme_minimal(base_size = 14) +
+    theme(axis.text.x = element_text(size = 12), 
+          axis.text.y = element_text(size = 12), 
+          axis.title = element_text(size = 14),
+          legend.title = element_blank())
+
+  p_interactive <- ggplotly(p)
+
+  p_interactive
+
+
+  ```
+
+
+
+  # Let's see the top 3 countries that have had the biggest increase in Life Ladder score from the first year to the last year and put both of them in one graph
+
+  ```{r}
+
+  world_happiness_clean_main <- read.csv("world_happiness_clean_main.csv")
+
+  # Calculate the change in Life Ladder score for each country
+  country_changes <- world_happiness_clean %>%
+    group_by(Country.name) %>%
+    summarise(
+      first_year = min(year),
+      last_year = max(year),
+      first_year_score = Life.Ladder[year == first_year],
+      last_year_score = Life.Ladder[year == last_year],
+      score_change = last_year_score - first_year_score
+    )
+
+  # Find the top 3 countries with the largest increase in Life Ladder score
+  top_3_increase <- country_changes %>%
+    arrange(desc(score_change)) %>%
+    head(3) %>%
+    mutate(Change.Type = "Increase")
+
+  # Find the top 3 countries with the largest decrease in Life Ladder score
+  top_3_decrease <- country_changes %>%
+    arrange(score_change) %>%
+    head(3) %>%
+    mutate(Change.Type = "Decrease")
+
+  # Combine the top 3 increases and decreases into one data frame
+  top_changes <- bind_rows(top_3_increase, top_3_decrease)
+
+  # Visualize the results with a bar plot
+  interactive <- ggplot(top_changes, aes(x = reorder(Country.name, score_change), y = score_change, fill = Change.Type)) +
+    geom_bar(stat = "identity") +
+    labs(title = "Top 3 Countries with Largest Increase and Decrease in Life Ladder Score",
+        x = "Country",
+        y = "Change in Life Ladder Score") +
+    theme_minimal(base_size = 8) +
+    theme(axis.text.x = element_text(size = 12, angle = 90, hjust = 1), 
+          axis.text.y = element_text(size = 12), 
+          axis.title = element_text(size = 14)) +
+    scale_fill_manual(values = c("Increase" = "darkblue", "Decrease" = "orange"))
+
+  ggplotly(interactive)
+  ```
+
+
+  # Let's see the the factor that made the biggest change for for the top country increased (Nicaragua)
+  ```{r}
+  install.packages("tidyr")
+  library(tidyr)
+
+  afghanistan_data <- world_happiness_clean_main %>%
+    filter(Country.name == "Afghanistan")
+
+  # Calculate the change in Life Ladder score over time
+  score_changes <- afghanistan_data %>%
+    arrange(year) %>%
+    mutate(score_change = Life.Ladder - lag(Life.Ladder, default = first(Life.Ladder)))
+
+  # Identify the factor with the highest correlation with score_change
+  correlations <- cor(score_changes[, c("score_change", "Log.GDP.per.capita", "Social.support", 
+                                        "Healthy.life.expectancy.at.birth", "Freedom.to.make.life.choices", 
+                                        "Generosity", "Perceptions.of.corruption", "Positive.affect", 
+                                        "Negative.affect")], use = "complete.obs")
+
+  # Find the factor with the highest correlation with score_change
+  most_impactful_factor <- names(which.max(abs(correlations["score_change", -1])))
+
+  # Print the most impactful factor
+  most_impactful_factor
+
+
+  ```
+
+
+  # Let's see the the factor that made the biggest change for for the top country Decreased (Afghanistan)
+  ```{r}
+  install.packages("tidyr")
+  library(tidyr)
+
+
+  # Filter data for Afghanistan
+  afghanistan_data <- world_happiness_clean_main %>%
+    filter(Country.name == "Afghanistan")
+
+  # Calculate the change in Life Ladder score over time
+  afghanistan_data <- afghanistan_data %>%
+    arrange(year) %>%
+    mutate(score_change = Life.Ladder - lag(Life.Ladder, default = first(Life.Ladder)))
+
+  # Calculate correlations between score_change and other factors
+  correlations <- cor(score_changes[, c("score_change", "Log.GDP.per.capita", "Social.support", 
+                                        "Healthy.life.expectancy.at.birth", "Freedom.to.make.life.choices", 
+                                        "Generosity", "Perceptions.of.corruption", "Positive.affect", 
+                                        "Negative.affect")], use = "complete.obs")
+  # Find the factor with the highest correlation with score_change
+  most_impactful_factor <- names(which.max(abs(correlations["score_change", -1])))
+
+  # Print the most impactful factor
+  most_impactful_factor
+
+
+  ```
