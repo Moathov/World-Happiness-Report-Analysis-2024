@@ -35,8 +35,8 @@
   ```{r, Reading the Dataset}
   library(readr)
 
-  World_happiness_data_2024 <- read.csv("C:/Users/m.alshannaq/Downloads/archive (7)/World-happiness-report-2024.csv") # nolint
-  World_happiness_data <- read.csv("C:/Users/m.alshannaq/Downloads/archive (7)/World-happiness-report-updated_2024.csv") # nolint
+  World_happiness_data_2024 <- read.csv("path/to/your/dataset/World-happiness-report-2024.csv")
+  World_happiness_data <- read.csv("path/to/your/dataset/World-happiness-report.csv")
 
 
   str(World_happiness_data_2024)
@@ -110,6 +110,9 @@
 
   # For Example: "Afghanistan" had two NULL values in the "Log.GDP.per.capita" column, I have Replaced these null values with the "Mean/Average" of values in the "Log.GDP.per.capita" for "Afghanistan" country Only across the years.
 
+#In case one country had all the values as NULL, I will replace them with the "Mean/Average" of the whole column.
+
+
   ```{r}
   library(dplyr)
 
@@ -117,9 +120,6 @@
     valid_values <- x[!is.na(x) & !is.nan(x)]
     mean(valid_values)
   }
-
-  # Read the data
-  World_happiness_data <- read.csv("C:/Users/m.alshannaq/Downloads/archive (7)/World-happiness-report-updated_2024.csv")
 
   # Group by Country.name and fill NA and NaN values with the mean of each country
   world_happiness_clean <- World_happiness_data %>%
@@ -139,9 +139,6 @@
   world_happiness_clean_final <- world_happiness_clean_final %>%
     filter(Country.name != "Israel")
 
-  # Write the cleaned data to a CSV file
-  write.csv(world_happiness_clean_final, "world_happiness_clean_main.csv")
-
 
 
   ```
@@ -149,7 +146,8 @@
 
 
 
-  # I am gonna repeat the process but for the World_happiness_data_2024 without the grouping
+  # I am gonna repeat the process for the "World_happiness_data_2024" without the grouping, but with the "Mean/Average" for the whole column. because this dataset contains only one row of data for each country.
+
   ```{r}
   library(dplyr)
   library(lsa)
@@ -171,7 +169,6 @@
 
   head(world_happiness_clean_2024)
 
-  write.csv(world_happiness_clean_2024, "world_happiness_clean_2024.csv")
   ```
 
 
@@ -182,17 +179,14 @@
   library(ggplot2)
   library(plotly)
 
-  world_happiness_clean_2024 <- read.csv("C:/Users/m.alshannaq/Downloads/archive (7)/world_happiness_clean_2024.csv") # nolint
-  head(world_happiness_clean_2024)
-
-  p <- ggplot(world_happiness_clean_2024, aes(x = Regional.indicator, fill = Regional.indicator)) + # nolint
+  p <- ggplot(world_happiness_clean_2024, aes(x = Regional.indicator, fill = Regional.indicator)) + 
     geom_bar() +
     labs(title = "Number of Countries per Region",
         x = "Region",
         y = "Number of Countries") +
     theme_minimal() +
     theme(legend.title = element_blank(),
-          axis.text.x = element_text(angle = 90, hjust = 1)) # nolint
+          axis.text.x = element_text(angle = 90, hjust = 1)) 
 
   interactive_plot <- ggplotly(p)
 
@@ -200,48 +194,41 @@
 
   ```
 
-  # Let's see the happiness score across the different regions
 
+
+  # Let's see the happiness score across the different regions
   ```{r}
   library(RColorBrewer)
 
 
-  colors <- brewer.pal(n = length(unique(world_happiness_clean_2024$Regional.indicator)), name = "Set3") # nolint
+  colors <- brewer.pal(n = length(unique(world_happiness_clean_2024$Regional.indicator)), name = "Set3") 
 
-  ggplot(world_happiness_clean_2024, aes(x = Regional.indicator, y = Ladder.score, fill = Regional.indicator)) + # nolint
+  ggplot(world_happiness_clean_2024, aes(x = Regional.indicator, y = Ladder.score, fill = Regional.indicator)) + 
     geom_bar(stat = "identity") +
     labs(title = "Happiness (Ladder score) Across Regions",
         x = "Region",
         y = "Happiness (Ladder score)") +
     scale_fill_manual(values = colors) +  
     theme_minimal(base_size = 14) +  
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12),  #nolint
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12),  
           axis.text.y = element_text(size = 12), 
           axis.title = element_text(size = 14),  
           legend.position = "none")
 
-
-
   ```
 
-  # Now let's see the correlation between all the factors by Drawing a Correlation Matrix (Heatmap)
+
+
+
+  #Now let's get beck to "world_happiness_clean" and see the correlation between all the factors by Drawing a Correlation Matrix (Heatmap)
   ```{r}
 
-
-  install.packages("corrplot")
-  install.packages("ggplot2")
-  install.packages("dplyr")
-  library(corrplot)
-  library(ggplot2)
-  library(dplyr)
-
-  world_happiness_clean_main <- read.csv("world_happiness_clean_main.csv")
-  numeric_columns <- select_if(world_happiness_clean_main, is.numeric) %>% select(-year) # nolint
+  numeric_columns <- select_if(world_happiness_clean_main, is.numeric) %>% select(-year) 
 
 
   correlation_matrix <- cor(numeric_columns, use = "complete.obs")
 
-  upper_triangle_mask <- matrix(NA, nrow = nrow(correlation_matrix), ncol = ncol(correlation_matrix))# nolint
+  upper_triangle_mask <- matrix(NA, nrow = nrow(correlation_matrix), ncol = ncol(correlation_matrix))
   upper_triangle_mask[upper.tri(upper_triangle_mask)] <- TRUE
 
   corrplot(correlation_matrix, method = "color", 
@@ -260,20 +247,11 @@
 
   # Now let's see what are the most correlated factors with the Life Ladder Score
   ```{r}
-  install.packages("corrplot")
-  install.packages("ggplot2")
-  install.packages("dplyr")
-  library(corrplot)
-  library(ggplot2)
-  library(dplyr)
-
-  world_happiness_clean_main <- read.csv("world_happiness_clean_main.csv")
-
-  numeric_columns <- select_if(world_happiness_clean_main, is.numeric) %>% select(-year) # nolint
+  numeric_columns <- select_if(world_happiness_clean_main, is.numeric) %>% select(-year) 
 
   # Calculate correlations with Life Ladder
   correlations <- cor(numeric_columns, use = "complete.obs")
-  cor_life_ladder <- correlations["Life.Ladder", -1]  # nolint
+  cor_life_ladder <- correlations["Life.Ladder", -1]  
 
   # Prepare data for visualization
   cor_df <- data.frame(
@@ -301,9 +279,6 @@
   # Let's Draw the Top 3 Happiest and Unhappiest Countries (Total Life Ladder Score) from 2005-2023.
   ```{r}
 
-
-  world_happiness_clean_main <- read.csv("world_happiness_clean_main.csv")
-
   total_life_ladder <- world_happiness_clean_main %>%
     group_by(Country.name) %>%
     summarise(Total_Life_Ladder = sum(Life.Ladder, na.rm = TRUE))
@@ -320,10 +295,10 @@
 
   top_countries <- bind_rows(top_3_happiest, top_3_unhappiest)
 
-  p <- ggplot(top_countries, aes(x = reorder(Country.name, Total_Life_Ladder), y = Total_Life_Ladder, fill = Category)) + #nolint
+  p <- ggplot(top_countries, aes(x = reorder(Country.name, Total_Life_Ladder), y = Total_Life_Ladder, fill = Category)) +
     geom_bar(stat = "identity") +
     coord_flip() +
-    labs(title = "Top 3 Happiest and Unhappiest Countries (Total Life Ladder Score)", #nolint
+    labs(title = "Top 3 Happiest and Unhappiest Countries (Total Life Ladder Score)", 
         x = "Country",
         y = "Total Life Ladder Score") +
     scale_fill_manual(values = c("Happiest" = "#208a1a", "Unhappiest" = "#d6b119cd")) +
@@ -337,16 +312,12 @@
 
   p_interactive
 
-
   ```
 
 
 
   # Let's see the top 3 countries that have had the biggest increase in Life Ladder score from the first year to the last year and put both of them in one graph
-
   ```{r}
-
-  world_happiness_clean_main <- read.csv("world_happiness_clean_main.csv")
 
   # Calculate the change in Life Ladder score for each country
   country_changes <- world_happiness_clean %>%
@@ -421,9 +392,6 @@
 
   # Let's see the the factor that made the biggest change for for the top country Decreased (Afghanistan)
   ```{r}
-  install.packages("tidyr")
-  library(tidyr)
-
 
   # Filter data for Afghanistan
   afghanistan_data <- world_happiness_clean_main %>%
@@ -445,5 +413,24 @@
   # Print the most impactful factor
   most_impactful_factor
 
-
   ```
+
+# Here is a link to some of my interesting visualizations of the World_Happiness_Report on Tableau Public: https://public.tableau.com/app/profile/moath.alshannaq/viz/WorldHappinessReportAnalysis2005-2024/LifeLadderScoreDistributionforEachCountryFrom2005-2023
+
+
+
+## Conclusion
+
+#In this analysis, I found the following:
+
+# The three most significant factors affecting country happiness are Log GDP per Capita, Social Support, and Healthy Life Expectancy at Birth.
+
+# Top three happiest countries are Denmark, Sweden, and Canada, and the top three unhappiest countries are Guyana, Cuba, and Maldives.
+
+# The top three countries with the biggest increase in happiness are Bulgaria, Kosovo, and Nicaragua, while the top three with the biggest decrease are Afghanistan, Jordan, and Lebanon.
+
+# For Nicaragua, the factor with the most significant impact on its happiness increase was Social Support.
+
+# For Afghanistan, the factor contributing most to its decrease in happiness was also Social Support.
+
+# I have included links above to Tableau visuals in the notebook, which offer helpful visualizations such as the correlation between happiness rank and various factors, a map showing the distribution of happiness worldwide, and other insightful charts.
