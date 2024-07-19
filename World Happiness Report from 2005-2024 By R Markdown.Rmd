@@ -24,14 +24,11 @@
   library(kableExtra)
   library(lsa)
   library(corrplot)
-
-
   ```
 
 
 
   # Read the Dataset  
-
   ```{r, Reading the Dataset}
   library(readr)
 
@@ -44,30 +41,27 @@
   #.......................
 
   str(World_happiness_data)
-
   ```
 
 
-  # let's take a brief look of the "World_happiness_data"
 
+
+  # let's take a brief look of the "World_happiness_data"
   ```{r, brief of the dataset}
 
   head(World_happiness_data)
   summary(World_happiness_data)
-
   ```
-  # let's take a brief look of the "World_happiness_data_2024"
 
+  # let's take a brief look of the "World_happiness_data_2024"
   ```{r, brief of the dataset}
 
   head(World_happiness_data_2024)
   summary(World_happiness_data_2024)
-
   ```
 
 
   # Here is a full view of the dataset after sorting it by the "Life.Ladder" in an Ascending order.
-
   ```{r, full view of the dataset}
 
   arranged_data <- World_happiness_data %>%  arrange(Life.Ladder)
@@ -79,7 +73,6 @@
 
 
   ## After further investigtion, I have found some NULL values in the datasete.I will summarize the columns that contains atleast one row with a NULL value:  
-
   ```{r}
 
   null_count <- World_happiness_data %>% summarise_all(~sum(is.na(.)))
@@ -87,7 +80,6 @@
   null_columns_names <- null_count %>% select_if(~.>0)
 
   print(null_columns_names)
-
   ```
 
 
