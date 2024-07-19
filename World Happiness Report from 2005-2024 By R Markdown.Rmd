@@ -11,11 +11,19 @@
   ```
 
   # installing and loading the required packages  
-  ```{r, Loading the Dataset}
+  ```{r}
+
   install.packages("tidyverse")
   install.packages("ggplot2")
   install.packages("dplyr")
   install.packages("lsa")
+  install.packages("plotly")
+  install.packages("RColorBrewer")
+  install.packages("readr")
+  install.packages("skimr")
+  install.packages("kableExtra")
+  install.packages("corrplot")
+
 
   library(tidyverse)
   library(ggplot2)   
@@ -24,6 +32,9 @@
   library(kableExtra)
   library(lsa)
   library(corrplot)
+  library(plotly)
+  library(RColorBrewer)
+  library(readr)
   ```
 
 
@@ -190,6 +201,7 @@
 
   # Let's see the happiness score across the different regions
   ```{r}
+
   library(RColorBrewer)
 
 
@@ -206,7 +218,6 @@
           axis.text.y = element_text(size = 12), 
           axis.title = element_text(size = 14),  
           legend.position = "none")
-
   ```
 
 
@@ -303,7 +314,6 @@
   p_interactive <- ggplotly(p)
 
   p_interactive
-
   ```
 
 
@@ -377,9 +387,8 @@
 
   # Print the most impactful factor
   most_impactful_factor
-
-
   ```
+
 
 
   # Let's see the the factor that made the biggest change for for the top country Decreased (Afghanistan)
